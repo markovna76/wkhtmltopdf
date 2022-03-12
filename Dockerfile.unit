@@ -1,0 +1,37 @@
+FROM oraclelinux:8.3 as builder
+RUN set -ex && \
+    dnf module install php:7.4 -y && \
+    dnf install -y \
+        gcc \
+        make \
+        git \
+        which \
+        pcre-devel \
+        php-devel \
+        php-embedded && \
+   git clone https://github.com/nginx/unit && \
+   cd unit && \
+    ./configure \
+       --prefix=/opt/unit \
+       --bindir=/opt/unit/bin \
+       --sbindir=/opt/unit/sbin \
+       --pid=/var/run/unit.pid \
+       --log=/dev/stdout \
+       --control=unix:/var/run/control.unit.sock \
+       --user=wwwrun \
+       --group=www \
+       --no-ipv6 && \
+   ./configure php --module=php >/dev/null && \
+   make -j2 >/dev/null && \
+   make install && \
+   mkdir /opt/unit/state/certs/ && \
+   mkdir /opt/unit/tmp && \
+   chmod 777 /opt/unit/state/certs/ && \
+   chmod 777 /opt/unit/tmp && \
+   dnf clean all &&\
+   rm -rf /var/cache/yum
+
+# --- Nginx Unit Files only ---
+FROM scratch
+COPY --from=builder /opt /opt
+

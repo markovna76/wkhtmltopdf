@@ -1,0 +1,86 @@
+variables:
+#  CI_DEBUG_TRACE: "true"
+  WERF_VERSION: "1.2 stable"
+#  WERF_VERSION: "1.1 stable"
+  WERF_LOG_TERMINAL_WIDTH: "150"
+
+
+stages:
+  - build
+  - deploy
+  - dismiss
+
+Build and Tests:
+  stage: build
+  script:
+    - werf run unit-test
+    - docker system prune -f
+  except:
+    - schedules
+  tags:
+    - werf
+#  when: manual
+
+.tmpl_deploy: &tmpl_deploy
+  stage: deploy
+  script:
+    - env  | sort  >/tmp/env
+    - werf build
+    - werf helm dependency build .helm/
+    - werf bundle publish
+    - werf converge
+#    - werf bundle apply
+    - werf cleanup
+  needs:
+    - Build and Tests
+  tags:
+    - werf
+
+.tmpl_delete: &tmpl_delete
+  stage: dismiss
+  script:
+    - werf dismiss
+  needs:
+    - Build and Tests
+  tags:
+    - werf
+
+Deploy to staging:
+  extends: .tmpl_deploy
+  environment:
+    name: staging
+    url: http://topdf.k8s.example
+  except:
+    - master
+  only:
+    - Does_Not_Run_On_Stag
+
+Deploy to Production:
+  extends: .tmpl_deploy
+  environment:
+    name: production
+  only:
+    - master
+  except:
+    - schedules
+
+Delete application from Staging:
+  extends: .tmpl_delete
+  environment:
+    name: staging
+  except:
+    - master
+  only:
+    - Does_Not_Run_On_Stag
+  needs:
+    - Deploy to staging
+  when: manual
+
+Delete application from Production:
+  extends: .tmpl_delete
+  environment:
+    name: production
+  only:
+    - master
+  when: manual
+

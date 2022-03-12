@@ -1,0 +1,14 @@
+.*
+*
+!Dockerfile*
+!public_html
+!services
+!vendor
+!src
+!.env
+!artisan
+!app
+!composer.*
+!tests
+!phpunit.xml
+

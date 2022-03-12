@@ -1,0 +1,6 @@
+giterminismConfigVersion: 1
+
+config:
+  allowUncommitted: true
+  goTemplateRendering:
+    allowEnvVariables: [ /CI_.*/, WERF_ENV ]

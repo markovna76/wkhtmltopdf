@@ -1,0 +1,102 @@
+deployment:
+  MinReplicas: 2
+  MaxReplicas: 5
+  resources:
+    CPU: 50m  # 50m - 50 milli CPU - 0.05 CPU
+    CPUMax: 100m
+    Memory: 100Mi
+    MemoryMax: 500Mi
+
+pod:
+  html2pdf:
+    # enable: true|false
+    enable: true
+#    env:
+#      env-test1: env-value-test1
+#      env-test2: env-value-test2
+    containerPort: 8080
+#    command:
+#      - "unitd"
+#      - "--no-daemon"
+#    lifecycle:
+#      preStop:
+#        - "kill -TERM `/bin/cat /var/run/unit.pid`"
+    livenessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 30
+      path: "/ping"
+      port: 8080
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 30
+      path: "/ping"
+      port: 8080
+
+#  Kubernetes service and configurations
+service:
+  # This services has a type ClusterIP
+  # One service but many ports
+  #    enable: true|false
+  #    name: any name of port
+  #    Protocol: TCP|UDP
+  #    ServicePort: 80 - Port of this service
+  #    PodPort: 8080 - Port of the Pod (see containerPort)
+  enable: true
+  ports:
+    - name: http
+      Protocol: TCP
+      ServicePort: 80
+      PodPort: 8080
+#    - name: dns
+#      Protocol: udp
+#      ServicePort: 53
+#      PodPort: 5353
+
+
+ingress:
+  # Ingress service
+  # enable: true|false
+  enable: true
+  dnsname: topdf.k8s.example
+  aliases:
+    - topdf.k8s.backend
+  whitelist:
+    - "10.2.0.0/16"
+    - "10.3.0.0/16"
+    - "192.168.0.0/24"
+    - "192.168.1.0/24"
+    - "192.168.2.0/24"
+    - "192.168.100.0/24"
+    # My home
+    - "192.168.15.0/24"
+
+    # AllowFromInternet: true|false
+  AllowFromInternet: false
+
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+#    nginx.ingress.kubernetes.io/server-snippet: |
+#      set $agentflag 0;
+#        if ($http_user_agent ~* "(Mobile)" ){
+#          set $agentflag 1;
+#        }
+#        if ( $agentflag = 1 ) {
+#          return 302 https://m.test.com;
+#        }
+#
+#    nginx.ingress.kubernetes.io/configuration-snippet: |
+#      more_set_headers "Request-Id: $req_id---";
+
+cert:
+  # Make SSL certificate
+  # enable: true|false
+  enable: false
+  # issuer letsencrypt|letsencrypt-test|selfsigned
+  issuer: selfsigned
+  #  duration - certificate live time
+  duration: 2160h # 3 mounth
+  #  renewBefore - renew time before the end ov live
+  renewBefore: 48h
+
+

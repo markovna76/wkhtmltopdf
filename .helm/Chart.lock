@@ -1,0 +1,6 @@
+dependencies:
+- name: microservice-01
+  repository: https://docker.oft-e.com/chartrepo/helm
+  version: "1"
+digest: sha256:dffc6eff52b26c85c89aeb5eb7137114c3ce6c95574e7bd049483ab298166370
+generated: "2021-12-08T08:29:34.426213498+07:00"

@@ -1,0 +1,87 @@
+project: {{ env "CI_PROJECT_PATH_SLUG" }}
+configVersion: 1
+deploy:
+  namespace: >-
+    [[ env ]]
+  helmRelease: >-
+    [[ project ]]-[[ env ]]
+
+---
+image: base
+dockerfile: Dockerfile.base
+
+---
+image: nginx_unit
+dockerfile: Dockerfile.unit
+
+---
+image: app_data
+dockerfile: Dockerfile.app
+
+---
+image: html2pdf_pre
+fromImage: base
+import:
+  - image: nginx_unit
+    add: /opt
+    to: /opt
+    before: install
+  - image: app_data
+    add: /app
+    before: install
+
+---
+image: pre-build-test
+fromImage: html2pdf_pre
+shell:
+  install:
+    - "
+      php -r \"copy('https://getcomposer.org/installer', 'composer-setup.php');\" \
+      && php composer-setup.php \
+      && mv composer.phar /usr/local/bin/composer \
+      && rm -f composer-setup.php
+      "
+
+---
+image: unit-test
+fromImage: pre-build-test
+shell:
+  install:
+    - "
+      cd /app && \
+      composer install --prefer-dist -o && \
+      composer check-platform-reqs && \
+      /app/vendor/bin/phpunit --migrate-configuration
+      "
+docker:
+  WORKDIR: /app
+  ENTRYPOINT: ["/app/vendor/bin/phpunit"]
+  # Path to the PHPUnit tests in this container: "/app/tests"
+  CMD: [ "/app/tests"]
+
+---
+image: pre-build-worker
+fromImage: unit-test
+shell:
+  install:
+    - cd /app; rm -Rf vendor; composer install --prefer-dist -o --no-dev
+
+---
+# --- Worker ---
+image: html2pdf
+fromImage: html2pdf_pre
+import:
+  - image: pre-build-worker
+    add: /app/vendor
+    before: setup
+shell:
+  setup:
+    - "
+        mkdir /docker-entrypoint.d && \
+        mv /app/services/kube/backend-* /docker-entrypoint.d/ && \
+        mv /app/services/kube/*.sh /docker-entrypoint.d/ && \
+        chmod +x /docker-entrypoint.d/*.sh && \
+        mv /docker-entrypoint.d/docker-entrypoint.sh / "
+docker:
+  ENTRYPOINT: [ "/docker-entrypoint.sh" ]
+  CMD: ["unitd", "--no-daemon" ]

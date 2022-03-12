@@ -1,0 +1,26 @@
+apiVersion: v2
+name: topdf
+maintainers:
+  - name: Oft-e
+    email: admin@corp.oft-e.com
+
+dependencies:
+  - name: microservice-01
+    version: 1.0
+    repository: "https://docker.oft-e.com/chartrepo/helm"
+    export-values:
+      - parent: werf
+        child: werf
+      - parent: deployment
+        child: deployment
+      - parent: pod
+        child: pod
+      - parent: ingress
+        child: ingress
+      - parent: cert
+        child: cert
+      - parent: service
+        child: service
+
+
+
