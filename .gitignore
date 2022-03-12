@@ -1,5 +1,4 @@
 /vendor
 /.idea
-.helm/charts/*
 /mna.*
 .phpunit.result.cache
