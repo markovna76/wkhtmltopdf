@@ -1,5 +1,5 @@
 {
-  "name": "wkhtmltopdf",
+  "name": "tools/wkhtmltopdf",
   "type": "project",
   "source": {
     "reference": "master",
